@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CalendarPlus, ChevronLeft, ChevronRight, Globe, Lock, Plus, CheckCircle2, Clock } from 'lucide-react';
+import { CalendarPlus, ChevronLeft, ChevronRight, Globe, Lock, Plus, CheckCircle2, Clock, ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -21,6 +21,7 @@ import {
   dtToDate,
   dtToMin,
   durationLabel,
+  fmtDate,
   fmtPhone,
   getSalonNow,
   hexToRgba,
@@ -28,14 +29,17 @@ import {
   makeDT,
   minToHHMM,
   money,
-  ruDate,
+  parseDate,
   ServiceItem,
   STATUS_META,
+  WEEKDAYS,
   WEEKDAYS_FULL,
   weekdayIdx,
+  ruDate,
 } from '../lib/utils';
 
-const ROW_H = 52;
+const ROW_H_WEEK = 48;
+const ROW_H_DAY = 52;
 
 interface TimeBlockItem {
   id: number;
@@ -43,6 +47,15 @@ interface TimeBlockItem {
   end_at: string;
   comment: string;
 }
+
+const getMondayStr = (dateStr: string): string => {
+  const d = parseDate(dateStr);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const mon = new Date(d);
+  mon.setDate(diff);
+  return fmtDate(mon);
+};
 
 function SlotActionModal({
   slot,
@@ -553,9 +566,20 @@ export default function CalendarPage() {
   const dateParam = params.get('date');
 
   const salonClock = getSalonNow(settings.tz);
-  const [dateStr, setDateStr] = useState<string>(() =>
+
+  // Режимы: 'week' или 'day'
+  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+  const [weekStartStr, setWeekStartStr] = useState<string>(() => {
+    const base = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : salonClock.dateStr;
+    return getMondayStr(base);
+  });
+  const [dayStr, setDayStr] = useState<string>(() =>
     dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : salonClock.dateStr,
   );
+
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStartStr, i)), [weekStartStr]);
+  const weekEndStr = addDays(weekStartStr, 6);
+
   const [appts, setAppts] = useState<AppointmentItem[] | null>(null);
   const [blocks, setBlocks] = useState<TimeBlockItem[]>([]);
   const [showCancelled, setShowCancelled] = useState(false);
@@ -573,17 +597,21 @@ export default function CalendarPage() {
     return getSalonNow(settings.tz);
   }, [settings.tz, tick]);
 
+  // Загрузка данных: для недели — вся неделя, для дня — один день
+  const loadFrom = viewMode === 'week' ? weekStartStr : dayStr;
+  const loadTo = viewMode === 'week' ? weekEndStr : dayStr;
+
   const load = useCallback(() => {
     Promise.all([
-      api<AppointmentItem[]>('/appointments', { params: { from: dateStr, to: dateStr } }),
-      api<TimeBlockItem[]>('/time-blocks', { params: { from: dateStr, to: dateStr } }),
+      api<AppointmentItem[]>('/appointments', { params: { from: loadFrom, to: loadTo } }),
+      api<TimeBlockItem[]>('/time-blocks', { params: { from: loadFrom, to: loadTo } }),
     ])
       .then(([a, b]) => {
         setAppts(a);
         setBlocks(b);
       })
       .catch((e: unknown) => toast(e instanceof Error ? e.message : 'Ошибка загрузки', 'err'));
-  }, [dateStr, toast]);
+  }, [loadFrom, loadTo, toast]);
 
   useEffect(() => {
     setAppts(null);
@@ -592,7 +620,8 @@ export default function CalendarPage() {
 
   useEffect(() => {
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
-      setDateStr(dateParam);
+      setWeekStartStr(getMondayStr(dateParam));
+      setDayStr(dateParam);
     }
   }, [dateParam]);
 
@@ -625,8 +654,11 @@ export default function CalendarPage() {
   const startMin = hhmmToMin(settings.work_start);
   const endMin = hhmmToMin(settings.work_end);
   const step = Math.max(10, Number(settings.slot_step) || 30);
-  const rows = Math.max(1, Math.ceil((endMin - startMin) / step));
-  const totalWorkMin = Math.max(1, endMin - startMin);
+
+  // Для недели — загрузка считается на всю неделю, для дня — на день
+  const totalWorkMin = viewMode === 'week'
+    ? Math.max(1, (endMin - startMin) * 7)
+    : Math.max(1, endMin - startMin);
   const loadPct = Math.min(
     100,
     Math.round(
@@ -634,59 +666,128 @@ export default function CalendarPage() {
     ),
   );
 
-  const isToday = dateStr === liveClock.dateStr;
-  const isPastDay = dateStr < liveClock.dateStr;
   const visibleAppts = (appts || []).filter((a) => showCancelled || a.status !== 'cancelled');
+
+  const prevWeek = () => setWeekStartStr(addDays(weekStartStr, -7));
+  const nextWeek = () => setWeekStartStr(addDays(weekStartStr, 7));
+  const goToday = () => {
+    setWeekStartStr(getMondayStr(liveClock.dateStr));
+    setDayStr(liveClock.dateStr);
+  };
+
+  const openDay = (d: string) => {
+    setDayStr(d);
+    setViewMode('day');
+  };
+
+  const openWeek = () => {
+    setViewMode('week');
+  };
+
+  const rows = Math.max(1, Math.ceil((endMin - startMin) / step));
+  const ROW_H = viewMode === 'week' ? ROW_H_WEEK : ROW_H_DAY;
 
   return (
     <div className="space-y-5">
       {/* Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-[#241322] leading-tight">
-            {ruDate(dateStr, { withYear: true })}
-          </h1>
-          <div className="text-xs font-medium text-rose-900/60 mt-0.5 flex items-center gap-2">
-            <span>{WEEKDAYS_FULL[weekdayIdx(dateStr)]}</span>
-            {isToday && (
+        <div className="flex items-center gap-3">
+          {viewMode === 'day' && (
+            <button
+              type="button"
+              onClick={openWeek}
+              className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-900 hover:bg-rose-50 transition-colors cursor-pointer"
+              title="Вернуться к неделе"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
+            {viewMode === 'week' ? (
               <>
-                <span aria-hidden="true">·</span>
-                <span className="text-rose-600 font-semibold">Сегодня ({liveClock.timeStr})</span>
+                <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#241322] leading-tight">
+                  {weekDays[0].slice(8, 10)} {['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'][Number(weekDays[0].slice(5,7))-1]} — {weekDays[6].slice(8, 10)} {['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'][Number(weekDays[6].slice(5,7))-1]} {weekDays[6].slice(0, 4)}
+                </h1>
+                <div className="text-xs font-medium text-rose-900/60 mt-0.5 flex items-center gap-2">
+                  <span>Неделя</span>
+                  {weekStartStr === getMondayStr(liveClock.dateStr) && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="text-rose-600 font-semibold">Текущая ({liveClock.timeStr})</span>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#241322] leading-tight">
+                  {ruDate(dayStr, { withYear: true })}
+                </h1>
+                <div className="text-xs font-medium text-rose-900/60 mt-0.5 flex items-center gap-2">
+                  <span>{WEEKDAYS_FULL[weekdayIdx(dayStr)]}</span>
+                  {dayStr === liveClock.dateStr && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="text-rose-600 font-semibold">Сегодня ({liveClock.timeStr})</span>
+                    </>
+                  )}
+                </div>
               </>
             )}
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-900 hover:bg-rose-50 transition-colors cursor-pointer"
-            onClick={() => setDateStr(addDays(dateStr, -1))}
-            aria-label="Предыдущий день"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
-          <input
-            className={`${INPUT_CLS} !w-auto font-mono-num`}
-            type="date"
-            value={dateStr}
-            onChange={(e) => e.target.value && setDateStr(e.target.value)}
-          />
-
-          <button
-            type="button"
-            className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-900 hover:bg-rose-50 transition-colors cursor-pointer"
-            onClick={() => setDateStr(addDays(dateStr, 1))}
-            aria-label="Следующий день"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {viewMode === 'week' ? (
+            <>
+              <button
+                type="button"
+                className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-900 hover:bg-rose-50 transition-colors cursor-pointer"
+                onClick={prevWeek}
+                aria-label="Предыдущая неделя"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-900 hover:bg-rose-50 transition-colors cursor-pointer"
+                onClick={nextWeek}
+                aria-label="Следующая неделя"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-900 hover:bg-rose-50 transition-colors cursor-pointer"
+                onClick={() => setDayStr(addDays(dayStr, -1))}
+                aria-label="Предыдущий день"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <input
+                className={`${INPUT_CLS} !w-auto font-mono-num`}
+                type="date"
+                value={dayStr}
+                onChange={(e) => e.target.value && setDayStr(e.target.value)}
+              />
+              <button
+                type="button"
+                className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-900 hover:bg-rose-50 transition-colors cursor-pointer"
+                onClick={() => setDayStr(addDays(dayStr, 1))}
+                aria-label="Следующий день"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          )}
 
           <button
             type="button"
             className={BTN_SECONDARY}
-            onClick={() => setDateStr(liveClock.dateStr)}
+            onClick={goToday}
           >
             Сегодня
           </button>
@@ -702,10 +803,10 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Day Summary Metrics */}
+      {/* Summary Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-2xl bg-white border border-rose-100 p-4">
-          <div className="text-xs font-medium text-rose-900/60">Записей</div>
+          <div className="text-xs font-medium text-rose-900/60">{viewMode === 'week' ? 'Записей за неделю' : 'Записей за день'}</div>
           <div className="text-2xl font-bold font-mono-num text-[#241322] mt-1">{active.length}</div>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/70 p-4">
@@ -717,20 +818,161 @@ export default function CalendarPage() {
           <div className="text-2xl font-bold font-mono-num text-emerald-700 mt-1">{money(doneSum)}</div>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-fuchsia-50 to-purple-50 border border-fuchsia-200/70 p-4">
-          <div className="text-xs font-medium text-fuchsia-800/75">Загрузка дня</div>
+          <div className="text-xs font-medium text-fuchsia-800/75">{viewMode === 'week' ? 'Загрузка недели' : 'Загрузка дня'}</div>
           <div className="text-2xl font-bold font-mono-num text-fuchsia-800 mt-1">{loadPct}%</div>
         </div>
       </div>
 
-      {/* Timeline Grid */}
+      {/* Calendar Grid */}
       {appts === null ? (
         <PageLoading />
+      ) : viewMode === 'week' ? (
+        // ===== НЕДЕЛЬНЫЙ ВИД =====
+        <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-rose-100 min-w-[800px]">
+            <div className="border-r border-rose-100 bg-rose-50/30"></div>
+            {weekDays.map((d, i) => {
+              const isToday = d === liveClock.dateStr;
+              const dayIdx = weekdayIdx(d);
+              const dayCount = visibleAppts.filter(a => dtToDate(a.start_at) === d).length;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => openDay(d)}
+                  className={`p-2 sm:p-3 text-center border-r border-rose-50 last:border-r-0 transition-colors hover:bg-rose-100/60 cursor-pointer ${isToday ? 'bg-rose-50' : 'bg-rose-50/30'}`}
+                  title={`Открыть день ${ruDate(d, { withYear: true })}`}
+                >
+                  <div className="text-[10px] sm:text-xs text-rose-900/60 font-medium uppercase tracking-wide">{WEEKDAYS[dayIdx]}</div>
+                  <div className={`text-lg sm:text-xl font-bold font-mono-num mt-0.5 ${isToday ? 'text-rose-600' : 'text-[#241322]'}`}>
+                    {d.slice(8, 10)}
+                  </div>
+                  {dayCount > 0 && (
+                    <div className="text-[10px] font-semibold text-rose-700 mt-0.5">{dayCount} зап.</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex-1 overflow-y-auto overflow-x-auto relative" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+            <div className="grid grid-cols-[60px_repeat(7,1fr)] min-w-[800px] relative">
+              {/* Time Column */}
+              <div className="border-r border-rose-100 relative bg-white sticky left-0 z-30">
+                {Array.from({ length: rows }).map((_, i) => {
+                  const m = startMin + i * step;
+                  const isHour = m % 60 === 0;
+                  return (
+                    <div key={i} style={{ height: ROW_H }} className={`border-b ${isHour ? 'border-rose-100' : 'border-rose-50 border-dashed'} flex items-start`}>
+                      <span className={`w-full text-right pr-2 pt-1.5 text-[10px] sm:text-xs font-mono-num ${isHour ? 'font-bold text-rose-950/75' : 'text-rose-900/40'}`}>
+                        {isHour ? minToHHMM(m) : ''}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Day Columns */}
+              {weekDays.map((dayStr, dayIdx) => {
+                const isToday = dayStr === liveClock.dateStr;
+                const isPastDay = dayStr < liveClock.dateStr;
+                const dayAppts = visibleAppts.filter(a => dtToDate(a.start_at) === dayStr);
+                const dayBlocks = blocks.filter(b => dtToDate(b.start_at) === dayStr);
+
+                return (
+                  <div key={dayIdx} className="relative border-r border-rose-50 last:border-r-0">
+                    {Array.from({ length: rows }).map((_, i) => {
+                      const m = startMin + i * step;
+                      const isPast = isPastDay || (isToday && m < liveClock.minOfDay);
+                      return (
+                        <div
+                          key={i}
+                          style={{ height: ROW_H }}
+                          onClick={() => !isPast && setSlotModal({ start: makeDT(dayStr, m), end: makeDT(dayStr, m + step) })}
+                          className={`border-b border-rose-50 border-dashed ${isPast ? 'bg-slate-50/50 cursor-not-allowed' : 'hover:bg-rose-50/55 cursor-pointer'}`}
+                        />
+                      );
+                    })}
+
+                    {dayBlocks.map(b => {
+                      const s = dtToMin(b.start_at);
+                      const e = dtToMin(b.end_at);
+                      const top = Math.max(0, ((s - startMin) / step) * ROW_H);
+                      const h = Math.max(28, ((e - s) / step) * ROW_H - 4);
+                      return (
+                        <div
+                          key={`b-${b.id}`}
+                          onClick={(ev) => { ev.stopPropagation(); removeBlock(b); }}
+                          style={{ top: top + 2, height: h }}
+                          className="absolute left-1 right-1 rounded-lg bg-slate-100/95 border border-slate-300/80 px-1.5 py-1 flex items-center gap-1 cursor-pointer hover:bg-slate-200/80 transition-colors z-10 overflow-hidden"
+                          title={b.comment || 'Заблокировано'}
+                        >
+                          <Lock className="w-3 h-3 shrink-0 text-slate-500" />
+                          <span className="text-[9px] sm:text-[10px] font-bold font-mono-num text-slate-700 truncate">
+                            {minToHHMM(s)}-{minToHHMM(e)}
+                          </span>
+                        </div>
+                      );
+                    })}
+
+                    {dayAppts.map(a => {
+                      const s = dtToMin(a.start_at);
+                      const e = dtToMin(a.end_at);
+                      const top = Math.max(0, ((s - startMin) / step) * ROW_H);
+                      const h = Math.max(32, ((e - s) / step) * ROW_H - 4);
+                      const compact = h <= 50;
+                      const svcColor = a.service?.color || '#e11d48';
+                      const isCompleted = a.status === 'completed';
+                      const isCancelled = a.status === 'cancelled' || a.status === 'no_show';
+
+                      return (
+                        <div
+                          key={a.id}
+                          onClick={(ev) => { ev.stopPropagation(); setModal({ appt: a, startMin: null }); }}
+                          style={{
+                            top: top + 2,
+                            height: h,
+                            backgroundColor: isCancelled ? '#f8fafc' : isCompleted ? 'rgba(16, 185, 129, 0.12)' : hexToRgba(svcColor, 0.13),
+                            borderColor: isCancelled ? '#cbd5e1' : isCompleted ? '#10b981' : svcColor,
+                          }}
+                          className={`absolute left-1 right-1 rounded-lg border px-1.5 py-1 flex ${compact ? 'flex-row items-center' : 'flex-col justify-between'} gap-1 cursor-pointer hover:shadow-md transition-all z-10 overflow-hidden ${isCancelled ? 'opacity-65' : ''}`}
+                        >
+                          <div className="flex items-center gap-1 min-w-0">
+                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0" style={{ backgroundColor: isCompleted ? '#059669' : svcColor }} />
+                            <span className="text-[9px] sm:text-[10px] font-bold font-mono-num text-[#241322] shrink-0">{minToHHMM(s)}</span>
+                            <span className="text-[10px] sm:text-xs font-bold text-[#241322] truncate">{a.client.name}</span>
+                          </div>
+                          {!compact && (
+                            <div className="flex items-center justify-between gap-1 text-[9px] sm:text-[10px]">
+                              <span className="text-rose-950/70 truncate">{a.service.name}</span>
+                              <span className="font-bold font-mono-num text-[#241322] shrink-0">{money(a.price)}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {isToday && liveClock.minOfDay >= startMin && liveClock.minOfDay <= endMin && (
+                      <div
+                        style={{ top: ((liveClock.minOfDay - startMin) / step) * ROW_H }}
+                        className="absolute left-0 right-0 h-0.5 bg-rose-600 z-20 pointer-events-none"
+                      >
+                        <span className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-rose-600" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       ) : (
+        // ===== ДНЕВНОЙ ВИД =====
         <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden">
           <div className="relative select-none" style={{ height: rows * ROW_H }}>
             {Array.from({ length: rows }).map((_, i) => {
               const m = startMin + i * step;
-              const isPast = isPastDay || (isToday && m < liveClock.minOfDay);
+              const isPast = dayStr < liveClock.dateStr || (dayStr === liveClock.dateStr && m < liveClock.minOfDay);
               const isHour = m % 60 === 0;
               return (
                 <div
@@ -738,8 +980,8 @@ export default function CalendarPage() {
                   onClick={() =>
                     !isPast &&
                     setSlotModal({
-                      start: makeDT(dateStr, m),
-                      end: makeDT(dateStr, m + step),
+                      start: makeDT(dayStr, m),
+                      end: makeDT(dayStr, m + step),
                     })
                   }
                   style={{ top: i * ROW_H, height: ROW_H }}
@@ -763,7 +1005,6 @@ export default function CalendarPage() {
               );
             })}
 
-            {/* Time Blocks */}
             {blocks.map((b) => {
               const s = dtToMin(b.start_at);
               const e = dtToMin(b.end_at);
@@ -791,7 +1032,6 @@ export default function CalendarPage() {
               );
             })}
 
-            {/* Appointments (color-coded by service polish color!) */}
             {visibleAppts.map((a) => {
               const s = dtToMin(a.start_at);
               const e = dtToMin(a.end_at);
@@ -872,8 +1112,7 @@ export default function CalendarPage() {
               );
             })}
 
-            {/* Current Time Line */}
-            {isToday && liveClock.minOfDay >= startMin && liveClock.minOfDay <= endMin && (
+            {dayStr === liveClock.dateStr && liveClock.minOfDay >= startMin && liveClock.minOfDay <= endMin && (
               <div
                 style={{ top: ((liveClock.minOfDay - startMin) / step) * ROW_H }}
                 className="absolute left-14 sm:left-16 right-0 h-0.5 bg-rose-600 z-20 pointer-events-none flex items-center"
@@ -890,7 +1129,7 @@ export default function CalendarPage() {
         <div className="flex flex-wrap items-center gap-4">
           <span className="inline-flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-rose-600" />
-            Цвет блока соответствует выбранной услуге
+            Цвет блока соответствует услуге
           </span>
           <span className="inline-flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -915,7 +1154,7 @@ export default function CalendarPage() {
 
       {modal && (
         <BookingModal
-          dateStr={dateStr}
+          dateStr={viewMode === 'day' ? dayStr : liveClock.dateStr}
           startMin={modal.startMin}
           appt={modal.appt}
           presetClientId={modal.presetClientId}
@@ -930,7 +1169,7 @@ export default function CalendarPage() {
       {slotModal && !modal && (
         <SlotActionModal
           slot={slotModal}
-          dateStr={dateStr}
+          dateStr={dtToDate(slotModal.start)}
           onClose={() => setSlotModal(null)}
           onBookClient={(m) => {
             setSlotModal(null);
