@@ -1,6 +1,8 @@
 node_modules/
 build/
 dist/
+# Local CRM data (server writes ./data; on Amvera it goes to the /data volume)
+data/
 coverage/
 .DS_Store
 *.log

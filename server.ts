@@ -97,7 +97,12 @@ interface StoreData {
 // ---------------- Config & Security ----------------
 const PORT = Number(process.env.PORT || 3000);
 const TOKEN_SECRET = process.env.JWT_SECRET || 'nail-crm-dev-secret-change-in-prod';
-const DATA_DIR = path.resolve(process.cwd(), 'data');
+// Data directory resolution order:
+// 1. DATA_DIR — set to /data on Amvera, where the persistent volume is mounted.
+// 2. ./data — local development fallback, keeps `npm run dev` working unchanged.
+// On Amvera the app code lives in /app, which is replaced on every rebuild, so
+// relying on the fallback there would wipe all CRM data on each deploy.
+const DATA_DIR = process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'nail-crm.json');
 const BLOCKING_STATUSES = new Set<ApptStatus>(['confirmed', 'completed']);
 const VALID_STATUSES = new Set<ApptStatus>(['confirmed', 'completed', 'cancelled', 'no_show']);
@@ -228,6 +233,19 @@ function daysBetween(olderDateStr: string, newerDateStr: string): number {
 }
 
 // ---------------- Persistence & Seeding ----------------
+
+function ensureDataDir(): void {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (err: unknown) {
+    console.error(
+      `Failed to create data directory ${DATA_DIR}:`,
+      err instanceof Error ? err.message : err,
+    );
+    throw err;
+  }
+}
+
 function createInitialStore(): StoreData {
   const tz = 'Europe/Moscow';
   const today = getSalonClock(tz).dateStr;
@@ -362,26 +380,57 @@ function createInitialStore(): StoreData {
 }
 
 function loadStore(): StoreData {
+  let raw: string | null;
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, 'utf8');
-      return JSON.parse(raw) as StoreData;
+    raw = fs.readFileSync(DATA_FILE, 'utf8');
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    if (code !== 'ENOENT') {
+      // EACCES/EROFS/EISDIR: reading is impossible, but the file may still hold
+      // real data. Seeding here would overwrite it, so fail loudly instead.
+      console.error(`Cannot read ${DATA_FILE}:`, err instanceof Error ? err.message : err);
+      throw err;
     }
-  } catch {
-    // Fallback to fresh seed if corrupted
+    raw = null;
   }
-  const initial = createInitialStore();
-  saveStore(initial);
-  return initial;
+
+  if (raw === null) {
+    console.log(`No data file at ${DATA_FILE}, seeding a fresh store`);
+    const initial = createInitialStore();
+    saveStore(initial);
+    return initial;
+  }
+
+  try {
+    return JSON.parse(raw) as StoreData;
+  } catch (err: unknown) {
+    const backup = `${DATA_FILE}.corrupt-${new Date().toISOString().replace(/[:.]/g, '')}`;
+    try {
+      fs.copyFileSync(DATA_FILE, backup);
+    } catch (copyErr: unknown) {
+      console.error(
+        `${DATA_FILE} is corrupt and backing it up failed (${
+          copyErr instanceof Error ? copyErr.message : copyErr
+        }); refusing to overwrite it with a seed`,
+      );
+      throw err;
+    }
+    console.error(
+      `${DATA_FILE} is not valid JSON (${err instanceof Error ? err.message : err}); ` +
+        `moved the original to ${backup} and seeded a fresh store`,
+    );
+    const initial = createInitialStore();
+    saveStore(initial);
+    return initial;
+  }
 }
 
 function saveStore(data: StoreData): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
+  ensureDataDir();
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
+ensureDataDir();
 const store: StoreData = loadStore();
 
 // ---------------- Domain Logic ----------------
@@ -1295,6 +1344,7 @@ async function start() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Nail Studio CRM listening on http://0.0.0.0:${PORT}`);
+    console.log(`CRM data file: ${DATA_FILE}`);
   });
 }
 

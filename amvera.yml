@@ -8,5 +8,13 @@ build:
   additionalCommands: npm ci && npm run build
 
 run:
-  command: npm start
+  # DATA_DIR points the app at Amvera's persistent volume. Without it the
+  # fallback in server.ts resolves to /app/data, which is wiped on every build.
+  # Passed via the start command because amvera.yml has no documented `env`
+  # section (variables are normally set in the UI); this relies on the same
+  # POSIX env-prefix mechanism already used by the npm "start" script.
+  command: DATA_DIR=/data npm start
   containerPort: 3000
+  # Default is /data already; pinned explicitly so a platform default change
+  # cannot silently move the volume away from where the app writes.
+  persistenceMount: /data
