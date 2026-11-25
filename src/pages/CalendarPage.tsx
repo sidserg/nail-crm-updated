@@ -57,6 +57,43 @@ const getMondayStr = (dateStr: string): string => {
   return fmtDate(mon);
 };
 
+// Блок карточек статистики. Родительский контейнер задаёт сетку (grid-cols-*),
+// поэтому здесь возвращаем только сами карточки как фрагмент.
+function MetricsCards({
+  viewMode,
+  activeCount,
+  plannedSum,
+  doneSum,
+  loadPct,
+}: {
+  viewMode: 'week' | 'day';
+  activeCount: number;
+  plannedSum: number;
+  doneSum: number;
+  loadPct: number;
+}) {
+  return (
+    <>
+      <div className="rounded-2xl bg-white border border-rose-100 p-4">
+        <div className="text-xs font-medium text-rose-900/60">{viewMode === 'week' ? 'Записей за неделю' : 'Записей за день'}</div>
+        <div className="text-2xl font-bold font-mono-num text-[#241322] mt-1">{activeCount}</div>
+      </div>
+      <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/70 p-4">
+        <div className="text-xs font-medium text-rose-800/75">План выручки</div>
+        <div className="text-2xl font-bold font-mono-num text-rose-700 mt-1">{money(plannedSum)}</div>
+      </div>
+      <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/70 p-4">
+        <div className="text-xs font-medium text-emerald-800/75">Выполнено</div>
+        <div className="text-2xl font-bold font-mono-num text-emerald-700 mt-1">{money(doneSum)}</div>
+      </div>
+      <div className="rounded-2xl bg-gradient-to-br from-fuchsia-50 to-purple-50 border border-fuchsia-200/70 p-4">
+        <div className="text-xs font-medium text-fuchsia-800/75">{viewMode === 'week' ? 'Загрузка недели' : 'Загрузка дня'}</div>
+        <div className="text-2xl font-bold font-mono-num text-fuchsia-800 mt-1">{loadPct}%</div>
+      </div>
+    </>
+  );
+}
+
 function SlotActionModal({
   slot,
   dateStr,
@@ -803,24 +840,15 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Summary Metrics */}
+      {/* Summary Metrics — десктоп: остаётся сверху (md+). На мобильных скрыт. */}
       <div className="hidden md:grid md:grid-cols-4 gap-3">
-        <div className="rounded-2xl bg-white border border-rose-100 p-4">
-          <div className="text-xs font-medium text-rose-900/60">{viewMode === 'week' ? 'Записей за неделю' : 'Записей за день'}</div>
-          <div className="text-2xl font-bold font-mono-num text-[#241322] mt-1">{active.length}</div>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/70 p-4">
-          <div className="text-xs font-medium text-rose-800/75">План выручки</div>
-          <div className="text-2xl font-bold font-mono-num text-rose-700 mt-1">{money(plannedSum)}</div>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/70 p-4">
-          <div className="text-xs font-medium text-emerald-800/75">Выполнено</div>
-          <div className="text-2xl font-bold font-mono-num text-emerald-700 mt-1">{money(doneSum)}</div>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-fuchsia-50 to-purple-50 border border-fuchsia-200/70 p-4">
-          <div className="text-xs font-medium text-fuchsia-800/75">{viewMode === 'week' ? 'Загрузка недели' : 'Загрузка дня'}</div>
-          <div className="text-2xl font-bold font-mono-num text-fuchsia-800 mt-1">{loadPct}%</div>
-        </div>
+        <MetricsCards
+          viewMode={viewMode}
+          activeCount={active.length}
+          plannedSum={plannedSum}
+          doneSum={doneSum}
+          loadPct={loadPct}
+        />
       </div>
 
       {/* Calendar Grid */}
@@ -1150,6 +1178,17 @@ export default function CalendarPage() {
           />
           Показывать отменённые
         </label>
+      </div>
+
+      {/* Summary Metrics — мобильные: отображается снизу под календарём */}
+      <div className="grid grid-cols-2 md:hidden gap-3 mt-4">
+        <MetricsCards
+          viewMode={viewMode}
+          activeCount={active.length}
+          plannedSum={plannedSum}
+          doneSum={doneSum}
+          loadPct={loadPct}
+        />
       </div>
 
       {modal && (
