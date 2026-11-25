@@ -688,7 +688,7 @@ export default function CalendarPage() {
   const ROW_H = viewMode === 'week' ? ROW_H_WEEK : ROW_H_DAY;
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col h-[100dvh] overflow-hidden space-y-2 w-full">
       {/* Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -804,7 +804,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Summary Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="hidden md:grid md:grid-cols-4 gap-3">
         <div className="rounded-2xl bg-white border border-rose-100 p-4">
           <div className="text-xs font-medium text-rose-900/60">{viewMode === 'week' ? 'Записей за неделю' : 'Записей за день'}</div>
           <div className="text-2xl font-bold font-mono-num text-[#241322] mt-1">{active.length}</div>
@@ -828,8 +828,8 @@ export default function CalendarPage() {
         <PageLoading />
       ) : viewMode === 'week' ? (
         // ===== НЕДЕЛЬНЫЙ ВИД =====
-        <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-rose-100 min-w-[800px]">
+        <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+          <div className="grid grid-cols-[32px_repeat(7,1fr)] md:grid-cols-[60px_repeat(7,1fr)] border-b border-rose-100 w-full">
             <div className="border-r border-rose-100 bg-rose-50/30"></div>
             {weekDays.map((d, i) => {
               const isToday = d === liveClock.dateStr;
@@ -855,8 +855,8 @@ export default function CalendarPage() {
             })}
           </div>
 
-          <div className="flex-1 overflow-y-auto overflow-x-auto relative" style={{ maxHeight: 'calc(100vh - 340px)' }}>
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] min-w-[800px] relative">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden relative w-full">
+            <div className="grid grid-cols-[32px_repeat(7,1fr)] md:grid-cols-[60px_repeat(7,1fr)] relative w-full">
               {/* Time Column */}
               <div className="border-r border-rose-100 relative bg-white sticky left-0 z-30">
                 {Array.from({ length: rows }).map((_, i) => {
@@ -904,7 +904,7 @@ export default function CalendarPage() {
                           key={`b-${b.id}`}
                           onClick={(ev) => { ev.stopPropagation(); removeBlock(b); }}
                           style={{ top: top + 2, height: h }}
-                          className="absolute left-1 right-1 rounded-lg bg-slate-100/95 border border-slate-300/80 px-1.5 py-1 flex items-center gap-1 cursor-pointer hover:bg-slate-200/80 transition-colors z-10 overflow-hidden"
+                          className="absolute left-1 right-1 rounded-lg bg-slate-100/95 border border-slate-300/80 px-1.5 py-1 flex items-center gap-1 cursor-pointer hover:bg-slate-200/80 transition-colors z-10 overflow-hidden truncate"
                           title={b.comment || 'Заблокировано'}
                         >
                           <Lock className="w-3 h-3 shrink-0 text-slate-500" />
@@ -935,7 +935,7 @@ export default function CalendarPage() {
                             backgroundColor: isCancelled ? '#f8fafc' : isCompleted ? 'rgba(16, 185, 129, 0.12)' : hexToRgba(svcColor, 0.13),
                             borderColor: isCancelled ? '#cbd5e1' : isCompleted ? '#10b981' : svcColor,
                           }}
-                          className={`absolute left-1 right-1 rounded-lg border px-1.5 py-1 flex ${compact ? 'flex-row items-center' : 'flex-col justify-between'} gap-1 cursor-pointer hover:shadow-md transition-all z-10 overflow-hidden ${isCancelled ? 'opacity-65' : ''}`}
+                          className={`absolute left-1 right-1 rounded-lg border px-1.5 py-1 flex ${compact ? 'flex-row items-center' : 'flex-col justify-between'} gap-1 cursor-pointer hover:shadow-md transition-all z-10 overflow-hidden truncate ${isCancelled ? 'opacity-65' : ''}`}
                         >
                           <div className="flex items-center gap-1 min-w-0">
                             <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0" style={{ backgroundColor: isCompleted ? '#059669' : svcColor }} />
