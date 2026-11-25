@@ -1,0 +1,15 @@
+- insert:
+    - id: llm-openai-compat
+      name: '@xdshi12/dsh-llm-openai-compat'
+      config:
+        baseURL: https://anymodel.org/v1/
+        apiKeyEnv: ANYMODEL_API_KEY
+        models:
+          - id: am/nemotron-3-ultra-550b-a55b
+            name: Nemotron 3 Ultra
+            contextWindow: 128000
+
+- id: agent-default-model
+  config:
+    provider: openai-compatible
+    model: am/nemotron-3-ultra-550b-a55b
