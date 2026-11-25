@@ -688,7 +688,7 @@ export default function CalendarPage() {
   const ROW_H = viewMode === 'week' ? ROW_H_WEEK : ROW_H_DAY;
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden space-y-2 w-full">
+    <div className="flex flex-col space-y-2 w-full">
       {/* Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -828,7 +828,7 @@ export default function CalendarPage() {
         <PageLoading />
       ) : viewMode === 'week' ? (
         // ===== НЕДЕЛЬНЫЙ ВИД =====
-        <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex flex-col ">
           <div className="grid grid-cols-[32px_repeat(7,1fr)] md:grid-cols-[60px_repeat(7,1fr)] border-b border-rose-100 w-full">
             <div className="border-r border-rose-100 bg-rose-50/30"></div>
             {weekDays.map((d, i) => {
@@ -855,7 +855,7 @@ export default function CalendarPage() {
             })}
           </div>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden relative w-full">
+          <div className="overflow-y-auto overflow-x-hidden relative w-full" style={{ maxHeight: "calc(100vh - 340px)" }}>
             <div className="grid grid-cols-[32px_repeat(7,1fr)] md:grid-cols-[60px_repeat(7,1fr)] relative w-full">
               {/* Time Column */}
               <div className="border-r border-rose-100 relative bg-white sticky left-0 z-30">
@@ -968,8 +968,8 @@ export default function CalendarPage() {
         </div>
       ) : (
         // ===== ДНЕВНОЙ ВИД =====
-        <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
-          <div className="relative select-none w-full overflow-y-auto" style={{ height: "calc(100vh - 250px)", minHeight: rows * ROW_H }}>
+        <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden ">
+          <div className="relative select-none w-full" style={{ height: rows * ROW_H }}>
             {Array.from({ length: rows }).map((_, i) => {
               const m = startMin + i * step;
               const isPast = dayStr < liveClock.dateStr || (dayStr === liveClock.dateStr && m < liveClock.minOfDay);
