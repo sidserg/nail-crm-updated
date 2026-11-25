@@ -969,7 +969,7 @@ export default function CalendarPage() {
       ) : (
         // ===== ДНЕВНОЙ ВИД =====
         <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
-          <div className="relative select-none flex-1 overflow-y-auto w-full" style={{ minHeight: rows * ROW_H }}>
+          <div className="relative select-none w-full overflow-y-auto" style={{ height: "calc(100vh - 250px)", minHeight: rows * ROW_H }}>
             {Array.from({ length: rows }).map((_, i) => {
               const m = startMin + i * step;
               const isPast = dayStr < liveClock.dateStr || (dayStr === liveClock.dateStr && m < liveClock.minOfDay);
