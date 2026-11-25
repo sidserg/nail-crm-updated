@@ -8,7 +8,8 @@ import {
   Empty,
   Field,
   INPUT_CLS,
-  SkeletonAnalyticsTable,
+  SkeletonChart,
+  SkeletonList,
   useToast,
 } from '../components/UI';
 import { addDays, fmtPhone, money, ruDate, todayStr } from '../lib/utils';
