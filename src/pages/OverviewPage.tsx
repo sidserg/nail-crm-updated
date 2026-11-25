@@ -117,8 +117,8 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Month KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      {/* Month KPIs — скрыты на мобильных, видны на md+ */}
+      <div className="hidden md:grid md:grid-cols-3 gap-3.5">
         <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/70 p-4">
           <div className="text-xs font-medium text-rose-800/75">Активных записей</div>
           <div className="text-2xl font-bold font-mono-num text-rose-700 mt-1">{total}</div>
