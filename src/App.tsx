@@ -50,7 +50,7 @@ function CrmLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen studio-mesh flex">
+    <div className="h-screen studio-mesh flex overflow-hidden">
       {/* Rich Plum-Berry Sidebar */}
       <aside className="hidden lg:flex w-64 shrink-0 sticky top-0 h-screen sidebar-gradient text-rose-50 flex-col p-4 border-r border-fuchsia-950/50">
         <div className="px-2 pt-2 pb-5 border-b border-white/10">
@@ -100,7 +100,7 @@ function CrmLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Compact Mobile Top Header */}
         <header className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-rose-100 px-4 h-14 flex items-center justify-between gap-4">
           <span className="font-display text-xl font-bold text-[#241322] truncate">
@@ -124,7 +124,7 @@ function CrmLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-10">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-10 flex flex-col min-h-0 overflow-hidden">
           {children}
         </main>
       </div>
