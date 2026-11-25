@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Check, Clock, MapPin, Phone, Sparkles, User, ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
-import { BTN_PRIMARY, BTN_SECONDARY, Field, INPUT_CLS, PageLoading, Spinner, useToast } from '../components/UI';
+import { BTN_PRIMARY, BTN_SECONDARY, Field, INPUT_CLS, SkeletonList, Spinner, useToast } from '../components/UI';
 import {
   addDays,
   addMinutesISO,
@@ -175,7 +175,7 @@ export default function BookPage() {
   if (!config) {
     return (
       <div className="min-h-screen studio-mesh flex items-center justify-center p-6">
-        <PageLoading />
+        <SkeletonList count={3} />
       </div>
     );
   }

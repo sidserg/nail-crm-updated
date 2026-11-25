@@ -182,3 +182,186 @@ export const BTN_GHOST =
 
 export const BTN_DANGER =
   'inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-sm font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer';
+
+// ==================== Skeleton Loaders ====================
+
+/**
+ * Общий скелетон для загрузки списков
+ * @param count - количество элементов для отображения
+ * @param className - дополнительные классы
+ */
+export function SkeletonList({ count = 3, className = '' }: { count?: number; className?: string }) {
+  return (
+    <div className={`space-y-4 ${className}`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="animate-pulse">
+          <div className="h-4 bg-rose-200/60 rounded w-3/4 mb-2" />
+          <div className="h-3 bg-rose-200/60 rounded w-1/2" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Скелетон для карточек клиентов
+ */
+export function SkeletonClientList({ count = 5 }: { count?: number }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="animate-pulse">
+          <div className="flex items-center gap-3 p-4 bg-rose-50/50 rounded-2xl border border-rose-100">
+            <div className="w-10 h-10 rounded-xl bg-rose-200/60" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-4 bg-rose-200/60 rounded w-2/3" />
+              <div className="h-3 bg-rose-200/60 rounded w-1/3" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Скелетон для графиков и статистики
+ */
+export function SkeletonChart({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="rounded-3xl bg-white border border-rose-100 p-6">
+      <div className="h-5 bg-rose-200/60 rounded w-1/3 mb-4" />
+      <div className="space-y-3">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="w-24 h-3 bg-rose-200/60 rounded" />
+            <div className="flex-1 h-3 bg-rose-200/60 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Скелетон для таблицы аналитики
+ */
+export function SkeletonAnalyticsTable({ rows = 7 }: { rows?: number }) {
+  return (
+    <div className="rounded-3xl bg-white border border-rose-100 p-6">
+      <div className="h-4 bg-rose-200/60 rounded w-1/4 mb-4" />
+      <div className="divide-y divide-rose-100">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="py-3 flex items-center justify-between gap-4 animate-pulse">
+            <div className="space-y-1">
+              <div className="h-4 bg-rose-200/60 rounded w-32" />
+              <div className="h-3 bg-rose-200/60 rounded w-20" />
+            </div>
+            <div className="w-16 h-4 bg-rose-200/60 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ==================== Lazy Image Component ====================
+
+interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  /** Альтернативный текст */
+  alt: string;
+  /** Загружаемый src */
+  src: string;
+  /** Placeholder изображения (опционально) */
+  placeholderSrc?: string;
+  /** Классы стейджа загрузки */
+  loadingClassName?: string;
+  /** Классы загруженного изображения */
+  loadedClassName?: string;
+}
+
+export function LazyImage({
+  src,
+  alt,
+  placeholderSrc,
+  className = '',
+  loadingClassName = 'bg-rose-100 animate-pulse',
+  loadedClassName = '',
+  onLoad,
+  ...props
+}: LazyImageProps) {
+  const [loaded, setLoaded] = useState(false);
+  const defaultPlaceholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="%23f3f4f6"%3E%3C/svg%3E';
+  const [currentSrc, setCurrentSrc] = useState(placeholderSrc || defaultPlaceholder);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setCurrentSrc(src);
+      setLoaded(true);
+      onLoad?.();
+    };
+    img.onerror = () => {
+      // Если основное изображение не загрузилось, оставляем placeholder
+      console.error(`Failed to load image: ${src}`);
+    };
+    img.src = src;
+  }, [src, onLoad]);
+
+  return (
+    <img
+      {...props}
+      src={currentSrc}
+      alt={alt}
+      className={`transition-all duration-300 ${
+        loaded ? loadedClassName : loadingClassName
+      } ${className}`}
+    />
+  );
+}
+
+/**
+ * Компонент для ленивой загрузки изображений в списке
+ */
+export function LazyImageSkeleton({
+  src,
+  alt,
+  aspectRatio = 16 / 9,
+  className = '',
+}: {
+  src: string;
+  alt: string;
+  aspectRatio?: number;
+  className?: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState('');
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setCurrentSrc(src);
+      setLoaded(true);
+    };
+    img.src = src;
+  }, [src]);
+
+  const placeholderSrc = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 225" fill="%23f3f4f6"%3E%3C/svg%3E';
+
+  return (
+    <div
+      className={`overflow-hidden rounded-xl ${className}`}
+      style={{ aspectRatio }}
+    >
+      <img
+        src={currentSrc || placeholderSrc}
+        alt={alt}
+        className={`w-full h-full object-cover transition-all duration-300 ${
+          loaded ? 'opacity-100' : 'opacity-70'
+        }`}
+        onLoad={() => setLoaded(true)}
+      />
+      {!loaded && <div className="absolute inset-0 bg-rose-100 animate-pulse" />}
+    </div>
+  );
+}

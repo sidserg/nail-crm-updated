@@ -11,7 +11,7 @@ import {
   Field,
   INPUT_CLS,
   Modal,
-  PageLoading,
+  SkeletonList,
   useToast,
 } from '../components/UI';
 import {
@@ -853,7 +853,7 @@ export default function CalendarPage() {
 
       {/* Calendar Grid */}
       {appts === null ? (
-        <PageLoading />
+        <SkeletonList count={3} />
       ) : viewMode === 'week' ? (
         // ===== НЕДЕЛЬНЫЙ ВИД =====
         <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden flex flex-col ">

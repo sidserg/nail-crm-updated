@@ -12,6 +12,7 @@ import {
   INPUT_CLS,
   Modal,
   PageLoading,
+  SkeletonClientList,
   StatusLabel,
   useToast,
 } from '../components/UI';
@@ -313,7 +314,7 @@ export default function ClientsPage() {
 
       <div className="rounded-3xl bg-white border border-rose-100 shadow-sm overflow-hidden">
         {list === null ? (
-          <PageLoading />
+          <SkeletonClientList count={3} />
         ) : list.length === 0 ? (
           <div className="p-6">
             <Empty>

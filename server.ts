@@ -523,6 +523,59 @@ function enrichAppointment(a: AppointmentRecord) {
 const app = express();
 app.use(express.json());
 
+// Token Bucket Rate Limiter - smoother handling of burst traffic
+interface TokenBucket {
+  tokens: number;
+  lastRefill: number;
+}
+
+const tokenBuckets = new Map<string, { tokens: number; lastRefill: number }>();
+
+const tokenBucketRateLimit = (maxTokens: number, refillRatePerSec: number) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = req.ip || 'unknown';
+    const now = Date.now();
+    const bucket = tokenBuckets.get(key) || { tokens: maxTokens, lastRefill: now };
+
+    // Refill tokens based on time passed
+    const timePassedSec = (now - bucket.lastRefill) / 1000;
+    const tokensToAdd = timePassedSec * refillRatePerSec;
+    bucket.tokens = Math.min(maxTokens, bucket.tokens + tokensToAdd);
+    bucket.lastRefill = now;
+
+    if (bucket.tokens >= 1) {
+      bucket.tokens -= 1;
+      tokenBuckets.set(key, bucket);
+      next();
+    } else {
+      // Calculate when next token will be available
+      const retryAfter = Math.ceil((1 - bucket.tokens) / refillRatePerSec);
+      res.set('Retry-After', retryAfter.toString());
+      res.status(429).json({ detail: 'Слишком много запросов. Попробуйте позже.' });
+    }
+  };
+};
+
+// More generous limits with token bucket algorithm
+const slotsRateLimit = tokenBucketRateLimit(120, 2);   // 120 tokens, refill 2/sec = ~120 req/min burst
+const bookRateLimit = tokenBucketRateLimit(30, 0.5);    // 30 tokens, refill 0.5/sec = ~30 req/min burst
+const generalRateLimit = tokenBucketRateLimit(200, 5);  // 200 tokens, refill 5/sec for other public endpoints
+
+// Middleware for caching public API responses
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const path = req.path;
+  // Cache services (10 minutes)
+  if (path === '/api/public/services' && req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, max-age=600');
+  }
+  // Cache config settings (1 hour)
+  else if (path === '/api/public/config' && req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
+  // Do not cache slots or appointments (they change frequently)
+  next();
+});
+
 interface AuthRequest extends Request {
   userId?: number;
 }
@@ -583,6 +636,8 @@ app.post('/api/auth/change-password', requireAuth, (req: AuthRequest, res) => {
 });
 
 // ---------------- Public Booking API ----------------
+// Rate limiting removed - was causing 429 errors on public booking endpoints
+// The token bucket implementation is kept for potential future use but not applied to public endpoints
 app.get('/api/public/config', (_req, res) => {
   const st = store.settings;
   const clock = getSalonClock(st.tz);
@@ -610,6 +665,7 @@ app.get('/api/public/services', (_req, res) => {
 });
 
 app.get('/api/public/slots', (req, res) => {
+  // No rate limiting - was causing 429 errors
   const day = String(req.query.date || '');
   const serviceId = Number(req.query.service_id);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !serviceId) {
@@ -634,7 +690,7 @@ app.get('/api/public/slots', (req, res) => {
   }
 });
 
-app.post('/api/public/book', (req, res) => {
+app.post('/api/public/book', (req, res) => { // No rate limiting - was causing 429 errors
   const name = String(req.body?.name || '').trim();
   const rawPhone = String(req.body?.phone || '');
   const serviceId = Number(req.body?.service_id);

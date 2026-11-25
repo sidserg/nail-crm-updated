@@ -8,7 +8,7 @@ import {
   Empty,
   Field,
   INPUT_CLS,
-  PageLoading,
+  SkeletonAnalyticsTable,
   useToast,
 } from '../components/UI';
 import { addDays, fmtPhone, money, ruDate, todayStr } from '../lib/utils';
@@ -239,7 +239,7 @@ export default function AnalyticsPage() {
       </div>
 
       {data === null ? (
-        <PageLoading />
+        <SkeletonChart rows={5} />
       ) : (
         <div className="space-y-6">
           {/* KPI Strip */}
@@ -430,7 +430,7 @@ export default function AnalyticsPage() {
             </div>
 
             {inactive === null ? (
-              <PageLoading />
+              <SkeletonList count={3} />
             ) : inactive.length === 0 ? (
               <Empty>Все клиенты были недавно — никто не пропал</Empty>
             ) : (

@@ -9,7 +9,7 @@ import {
   Field,
   INPUT_CLS,
   Modal,
-  PageLoading,
+  SkeletonList,
   useToast,
 } from '../components/UI';
 import { durationLabel, hexToRgba, money, ServiceItem } from '../lib/utils';
@@ -201,7 +201,7 @@ export default function ServicesPage() {
       </div>
 
       {list === null ? (
-        <PageLoading />
+        <SkeletonList count={3} />
       ) : list.length === 0 ? (
         <Empty>Добавьте услуги — от их длительности зависит сетка календаря</Empty>
       ) : (

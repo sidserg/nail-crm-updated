@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
-import { Empty, PageLoading, useToast } from '../components/UI';
+import { Empty, SkeletonChart, useToast } from '../components/UI';
 import { pad, WEEKDAYS } from '../lib/utils';
 
 const MONTHS_NOM = [
@@ -139,7 +139,7 @@ export default function OverviewPage() {
 
       <div className="rounded-3xl bg-white border border-rose-100 shadow-sm p-5 sm:p-6">
         {loading ? (
-          <PageLoading />
+          <SkeletonChart rows={5} />
         ) : error ? (
           <Empty>{error}</Empty>
         ) : (
