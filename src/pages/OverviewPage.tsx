@@ -72,6 +72,13 @@ export default function OverviewPage() {
     return list;
   }, [year, month]);
 
+  // Текущий день для выделения
+  const today = new Date();
+  const isToday = (day: number) => 
+    day === today.getDate() && 
+    year === today.getFullYear() && 
+    month === today.getMonth() + 1;
+
   const total = stats ? Object.values(stats).reduce((sum, n) => sum + Number(n || 0), 0) : 0;
   const busyDays = stats ? Object.values(stats).filter((n) => Number(n) > 0).length : 0;
   const peakEntry = stats
@@ -166,9 +173,9 @@ export default function OverviewPage() {
                     disabled={!clickable}
                     onClick={() => openDay(day)}
                     title={clickable ? `Записей: ${count}. Открыть день в календаре` : 'Нет записей'}
-                    className={`h-16 sm:h-20 rounded-2xl border p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(
+                    className={`h-16 sm:h-20 rounded-2xl border-2 p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(
                       count,
-                    )} ${clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
+                    )} ${isToday(day) ? 'border-black border-2 shadow-lg' : ''} ${clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
                   >
                     <span className="text-xs sm:text-sm font-bold font-mono-num">{day}</span>
                     {clickable && (

@@ -2,5 +2,10 @@
   "name": "Nail Studio CRM",
   "description": "Онлайн-запись для клиентов и CRM-кабинет мастера маникюра: календарь, клиенты, услуги и финансы.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"],
+  "testingAgent": {
+    "enabled": true,
+    "role": "Test Runner",
+    "tools": ["lint", "test", "build-check", "error-detection"]
+  }
 }
