@@ -145,7 +145,7 @@ export async function api<T = unknown>(path: string, { method = 'GET', body, par
 
     let data: { detail?: string | Array<{ msg: string }> } | null = null;
     try {
-      data = await res.json();
+      data = await res.json() as { detail?: string | Array<{ msg: string }> };
     } catch {
       // Empty body (e.g. 204)
     }
@@ -164,7 +164,7 @@ export async function api<T = unknown>(path: string, { method = 'GET', body, par
       throw new ApiError(typeof msg === 'string' && msg ? msg : `Ошибка ${res.status}`, res.status);
     }
 
-    const result = data as T;
+    const result = (data ?? {}) as T;
     
     // Cache successful GET responses
     if (isGet && !skipCache && cacheKey) {

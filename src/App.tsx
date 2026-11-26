@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   BrowserRouter,
   Link,
@@ -12,7 +12,7 @@ import {
   BarChart3,
   Calendar,
   ExternalLink,
-  Grid2x2,
+  LayoutDashboard,
   LogOut,
   Palette,
   Settings,
@@ -33,7 +33,7 @@ import SettingsPage from './pages/SettingsPage';
 
 const NAV = [
   { to: '/', label: 'Календарь', Icon: Calendar },
-  { to: '/overview', label: 'Обзор', Icon: Grid2x2 },
+  { to: '/overview', label: 'Обзор', Icon: LayoutDashboard },
   { to: '/clients', label: 'Клиенты', Icon: Users },
   { to: '/analytics', label: 'Финансы', Icon: BarChart3 },
   { to: '/services', label: 'Услуги', Icon: Palette },

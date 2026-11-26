@@ -11,7 +11,7 @@ const MONTHS_NOM = [
 ];
 
 function heatClasses(count: number): string {
-  if (count <= 0) return 'bg-rose-50/40 text-rose-900/40 border-rose-100';
+  if (count <= 0) return 'bg-rose-50/40 text-rose-900/40';
   if (count === 1) return 'bg-rose-100 text-rose-900 border-rose-200 hover:border-rose-400';
   if (count === 2) return 'bg-pink-200 text-rose-950 border-pink-300 hover:border-pink-500';
   if (count === 3) return 'bg-rose-400 text-white border-rose-500 hover:bg-rose-500';
@@ -93,7 +93,7 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold text-[#241322]">Обзор месяца</h1>
           <p className="text-xs text-rose-900/60 mt-0.5">
@@ -138,7 +138,7 @@ export default function OverviewPage() {
           <div className="text-xs font-medium text-fuchsia-800/75">Самый плотный день</div>
           <div className="text-2xl font-bold font-mono-num text-fuchsia-800 mt-1">
             {peakEntry && Number(peakEntry[1]) > 0
-              ? `${peakEntry[0]}.${pad(month)} · ${peakEntry[1]} зап.`
+              ? `${peakEntry[0]}.${pad(month)} • ${peakEntry[1]} зап.`
               : '—'}
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function OverviewPage() {
                     disabled={!clickable}
                     onClick={() => openDay(day)}
                     title={clickable ? `Записей: ${count}. Открыть день в календаре` : 'Нет записей'}
-                    className={`h-16 sm:h-20 rounded-2xl border-2 p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(count)} ${isToday(day) ? 'border-black shadow-lg' : 'border-rose-100'} ${clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
+                    className={`h-16 sm:h-20 rounded-2xl border-2 p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(count)} ${isToday(day) ? 'border-black shadow-lg' : ''} ${clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
                   >
                     <span className="text-xs sm:text-sm font-bold font-mono-num">{day}</span>
                     {clickable && (

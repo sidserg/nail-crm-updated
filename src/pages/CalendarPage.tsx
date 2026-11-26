@@ -606,13 +606,19 @@ export default function CalendarPage() {
 
   // Режимы: 'week' или 'day'
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+
+  // Use stable initializer that doesn't depend on changing salonClock
   const [weekStartStr, setWeekStartStr] = useState<string>(() => {
-    const base = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : salonClock.dateStr;
+    const now = new Date();
+    const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const base = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : nowStr;
     return getMondayStr(base);
   });
-  const [dayStr, setDayStr] = useState<string>(() =>
-    dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : salonClock.dateStr,
-  );
+  const [dayStr, setDayStr] = useState<string>(() => {
+    const now = new Date();
+    const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : nowStr;
+  });
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStartStr, i)), [weekStartStr]);
   const weekEndStr = addDays(weekStartStr, 6);

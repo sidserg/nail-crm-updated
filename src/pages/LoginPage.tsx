@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Lock, User } from 'lucide-react';
 import { api, setToken } from '../lib/api';
 import { BTN_PRIMARY, BTN_SECONDARY, Field, INPUT_CLS, useToast } from '../components/UI';
+import salonInterior from '../assets/images/salon_studio_interior_1795531098912.jpg';
 
 export default function LoginPage() {
   const [login, setLogin] = useState('');
@@ -46,7 +47,7 @@ export default function LoginPage() {
         {/* Visual Editorial Left Column */}
         <div className="md:col-span-6 relative min-h-[220px] md:min-h-[500px] bg-gradient-to-br from-[#3d1638] to-[#be185d]">
           <img
-            src="/src/assets/images/salon_studio_interior_1795531098912.jpg"
+            src={salonInterior}
             alt={config?.salon_name || 'Nail Studio'}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover md:absolute md:inset-0"

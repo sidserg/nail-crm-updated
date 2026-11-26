@@ -16,6 +16,9 @@ import {
   WEEKDAYS,
   weekdayIdx,
 } from '../lib/utils';
+import salonHeroManicure from '../assets/images/salon_hero_manicure_1795531097987.jpg';
+import salonInterior from '../assets/images/salon_studio_interior_1795531098912.jpg';
+import salonPalette from '../assets/images/salon_nail_palette_1795531098595.jpg';
 
 interface PublicConfig {
   salon_name: string;
@@ -258,7 +261,7 @@ export default function BookPage() {
 
           <div className="lg:col-span-6 relative min-h-[260px] lg:min-h-[380px] bg-gradient-to-br from-rose-100 to-fuchsia-100">
             <img
-              src="/src/assets/images/salon_hero_manicure_1795531097987.jpg"
+              src={salonHeroManicure}
               alt={config.salon_name}
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover lg:absolute lg:inset-0"
@@ -572,7 +575,7 @@ export default function BookPage() {
           <div className="rounded-3xl overflow-hidden bg-white border border-rose-100 shadow-sm grid grid-cols-1 sm:grid-cols-2">
             <div className="relative min-h-[200px] bg-rose-50">
               <img
-                src="/src/assets/images/salon_studio_interior_1795531098912.jpg"
+                src={salonInterior}
                 alt="Интерьер студии"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
@@ -595,7 +598,7 @@ export default function BookPage() {
           <div className="rounded-3xl overflow-hidden bg-white border border-rose-100 shadow-sm grid grid-cols-1 sm:grid-cols-2">
             <div className="relative min-h-[200px] bg-amber-50">
               <img
-                src="/src/assets/images/salon_nail_palette_1795531098595.jpg"
+                src={salonPalette}
                 alt="Палитра оттенков"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
