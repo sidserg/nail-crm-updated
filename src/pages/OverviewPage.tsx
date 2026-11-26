@@ -11,7 +11,8 @@ const MONTHS_NOM = [
 ];
 
 function heatClasses(count: number, isToday: boolean = false): string {
-  // Сегодняшняя дата всегда выделяется чёрной рамкой
+  // Сегодняшняя дата всегда выделяется жёлтым цветом
+  if (isToday) return 'bg-amber-400 text-white shadow-lg border-2 border-black';
   if (count <= 0) return 'bg-rose-50/40 text-rose-900/40';
   if (count === 1) return 'bg-rose-100 text-rose-900 border-rose-200 hover:border-rose-400';
   if (count === 2) return 'bg-pink-200 text-rose-950 border-pink-300 hover:border-pink-500';
@@ -172,10 +173,10 @@ export default function OverviewPage() {
                   <button
                     key={day}
                     type="button"
-                    disabled={!clickable}
+                    disabled={!clickable && !todayFlag}
                     onClick={() => openDay(day)}
                     title={clickable ? `Записей: ${count}. Открыть день в календаре` : 'Нет записей'}
-                    className={`h-16 sm:h-20 rounded-2xl border-2 p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(count)} ${todayFlag ? 'border-[4px] border-black shadow-xl' : ''} ${clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
+                    className={`h-16 sm:h-20 rounded-2xl border-2 p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(count, todayFlag)} ${todayFlag ? '' : clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
                   >
                     <span className="text-xs sm:text-sm font-bold font-mono-num">{day}</span>
                     {clickable && (

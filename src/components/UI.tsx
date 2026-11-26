@@ -278,6 +278,8 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   loadingClassName?: string;
   /** Классы загруженного изображения */
   loadedClassName?: string;
+  /** Callback при загрузке изображения */
+  onLoad?: () => void;
 }
 
 export function LazyImage({
