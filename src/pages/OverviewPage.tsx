@@ -173,7 +173,7 @@ export default function OverviewPage() {
                     disabled={!clickable}
                     onClick={() => openDay(day)}
                     title={clickable ? `Записей: ${count}. Открыть день в календаре` : 'Нет записей'}
-                    className={`h-16 sm:h-20 rounded-2xl border-2 p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(count)} ${isToday(day) ? 'border-black shadow-lg' : ''} ${clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
+                    className={`h-16 sm:h-20 rounded-2xl border-2 p-2 sm:p-2.5 flex flex-col items-start justify-between transition-all ${heatClasses(count)} ${isToday(day) ? 'border-4 border-black shadow-xl' : ''} ${clickable ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default'}`}
                   >
                     <span className="text-xs sm:text-sm font-bold font-mono-num">{day}</span>
                     {clickable && (
